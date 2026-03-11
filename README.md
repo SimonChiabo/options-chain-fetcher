@@ -64,7 +64,7 @@ options-chain-fetcher/
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/options-chain-fetcher.git
+git clone https://github.com/SimonChiabo/options-chain-fetcher.git
 cd options-chain-fetcher
 
 # 2. Crear entorno virtual
