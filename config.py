@@ -1,6 +1,6 @@
 """
 config.py
-Configuración central. Lee variables del .env y expone
+Configuracion central. Lee variables del .env y expone
 constantes usadas en todo el proyecto.
 """
 
@@ -9,17 +9,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-# ── Schwab API ──────────────────────────────────────────────
+# -- Schwab API ----------------------------------------------
 SCHWAB_CLIENT_ID     = os.getenv("SCHWAB_CLIENT_ID", "")
 SCHWAB_CLIENT_SECRET = os.getenv("SCHWAB_CLIENT_SECRET", "")
-SCHWAB_REDIRECT_URI  = os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
+SCHWAB_REDIRECT_URI  = os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1:8182")
 
-# ── Salida ──────────────────────────────────────────────────
+# -- Salida ---------------------------------------------------
 OUTPUT_DIR           = os.getenv("OUTPUT_DIR", "output")
 REFRESH_INTERVAL     = int(os.getenv("REFRESH_INTERVAL", 60))
 
-# ── Columnas que se exportan al Excel ───────────────────────
+# -- Columnas que se exportan al Excel ------------------------
 CALLS_COLUMNS = [
     "strike",
     "bid",
@@ -49,5 +48,5 @@ def validate_config() -> None:
     if missing:
         raise EnvironmentError(
             f"Faltan variables de entorno: {', '.join(missing)}\n"
-            "Copiá .env.example → .env y completá tus credenciales."
+            "Copia .env.example -> .env y completa tus credenciales."
         )

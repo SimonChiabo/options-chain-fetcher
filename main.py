@@ -1,6 +1,6 @@
 """
 main.py
-Entry point del proyecto. Acepta parámetros por CLI.
+Entry point del proyecto. Acepta parametros por CLI.
 
 Uso:
     python main.py --symbol SPY --expiration 2025-06-20
@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    print(f"\n📡 Descargando option chain: {args.symbol} | Vencimiento: {args.expiration}")
+    print(f"\n[*] Descargando option chain: {args.symbol} | Vencimiento: {args.expiration}")
 
     raw = fetch_option_chain(
         symbol=args.symbol,
@@ -62,11 +62,11 @@ def main() -> None:
 
     calls_df, puts_df = parse_option_chain(raw, args.expiration)
 
-    print(f"   → {len(calls_df)} calls | {len(puts_df)} puts encontradas")
+    print(f"    -> {len(calls_df)} calls | {len(puts_df)} puts encontradas")
 
     filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration)
 
-    print(f"\n🎯 Listo. Abrí el archivo: {filepath}\n")
+    print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
 
 
 if __name__ == "__main__":
