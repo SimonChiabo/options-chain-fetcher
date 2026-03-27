@@ -8,9 +8,9 @@ Uso:
 """
 
 import argparse
-from datetime import datetime
-
+import re
 import sys
+from datetime import datetime
 
 import config
 from config       import ConfigError
@@ -18,6 +18,16 @@ from src.auth     import get_client
 from src.fetcher  import fetch_option_chain
 from src.parser   import parse_option_chain
 from src.exporter import export_to_excel
+
+
+def _validate_symbol(symbol: str) -> str:
+    """Solo letras, numeros y punto. Maximo 10 caracteres."""
+    if not re.fullmatch(r"[A-Za-z0-9.]{1,10}", symbol):
+        raise ValueError(
+            f"Simbolo invalido: '{symbol}'. "
+            "Solo letras, numeros y punto. Maximo 10 caracteres."
+        )
+    return symbol.upper()
 
 
 def parse_args() -> argparse.Namespace:
@@ -61,6 +71,7 @@ def main() -> None:
     try:
         config.validate_config()
         args = parse_args()
+        args.symbol = _validate_symbol(args.symbol)
 
         print(f"\n[*] Descargando option chain: {args.symbol} | Vencimiento: {args.expiration}")
 
@@ -82,8 +93,8 @@ def main() -> None:
 
         print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
 
-    except ConfigError as e:
-        print(f"\n[ERROR] Configuracion: {e}")
+    except (ValueError, ConfigError) as e:
+        print(f"\n[ERROR] {e}")
         raise SystemExit(1)
     except RuntimeError as e:
         print(f"\n[ERROR] API: {e}")

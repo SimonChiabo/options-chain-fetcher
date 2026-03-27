@@ -20,9 +20,11 @@ __pycache__/
 dist/
 build/
 
-# Tokens de sesión Schwab (se generan al autenticar)
-*.json
+# Tokens de autenticacion Schwab
 token*.pickle
+token*.json
+schwab_token*
+*.dat
 
 # IDEs
 .vscode/

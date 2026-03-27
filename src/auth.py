@@ -8,11 +8,16 @@ Flujo:
   3. Siguientes ejecuciones -> reusa/refresca el token automaticamente
 """
 
+import logging
+import os
 import pathlib
+import stat
 
 import schwab
 
 import config
+
+log = logging.getLogger(__name__)
 
 TOKEN_PATH = pathlib.Path(__file__).parent.parent / "token.pickle"
 
@@ -36,13 +41,16 @@ def get_client() -> schwab.client.Client:
                 app_secret=config.SCHWAB_CLIENT_SECRET,
             )
         except Exception as e:
-            print(f"[WARN] Token invalido o expirado ({e}). Iniciando nuevo flujo OAuth.")
+            log.debug("Error cargando token: %s", e)
+            print("[WARN] Token invalido o expirado. Iniciando nuevo flujo OAuth.")
             TOKEN_PATH.unlink(missing_ok=True)
 
     # Primera vez, o tras borrar token corrupto -> flujo interactivo por navegador
     print("=" * 60)
     print("Autenticacion con Schwab API.")
     print("Se abrira el navegador. Inicia sesion con tu cuenta Schwab.")
+    print("[INFO] Aparecera una advertencia SSL en el navegador. Es normal.")
+    print("[INFO] No uses proxies ni VPNs durante este paso.")
     print("=" * 60)
 
     client = schwab.auth.client_from_login_flow(
@@ -51,5 +59,13 @@ def get_client() -> schwab.client.Client:
         callback_url=config.SCHWAB_REDIRECT_URI,
         token_path=str(TOKEN_PATH),
     )
+
+    # Restringir permisos del archivo de token al propietario (0o600)
+    if TOKEN_PATH.exists():
+        try:
+            TOKEN_PATH.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        except OSError:
+            pass  # Windows puede no soportar chmod; se ignora silenciosamente
+
     print(f"[OK] Token guardado en: {TOKEN_PATH}")
     return client

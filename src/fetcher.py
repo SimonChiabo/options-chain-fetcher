@@ -7,11 +7,14 @@ Documentacion del endpoint:
   Parametros clave: symbol, contractType, toDate, fromDate
 """
 
+import logging
 from datetime import date
 from typing import Any, Optional
 import schwab
 
 from src.auth import get_client
+
+log = logging.getLogger(__name__)
 
 
 def fetch_option_chain(
@@ -67,9 +70,9 @@ def fetch_option_chain(
     response = client.get_option_chain(**kwargs)
 
     if not response.ok:
+        log.debug("Schwab API error response: %s", response.text)
         raise RuntimeError(
-            f"Error al obtener option chain para {symbol}: "
-            f"{response.status_code} - {response.text}"
+            f"Error al obtener option chain para {symbol}: HTTP {response.status_code}"
         )
 
     data = response.json()
