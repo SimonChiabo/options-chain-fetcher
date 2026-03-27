@@ -5,9 +5,9 @@ con formato visual claro para el analista financiero.
 
 Genera:
   output/{SYMBOL}_{YYYYMMDD}_options.xlsx
-    ├── Sheet "CALLS"
-    ├── Sheet "PUTS"
-    └── Sheet "INFO"  ← metadatos de la descarga
+    |- Sheet "CALLS"
+    |- Sheet "PUTS"
+    +- Sheet "INFO"  <- metadatos de la descarga
 """
 
 import pathlib
@@ -15,19 +15,21 @@ from datetime import date, datetime
 import pandas as pd
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 
 import config
 
 
-# ── Colores ────────────────────────────────────────────────
+# -- Colores -------------------------------------------------
 CALL_HEADER_COLOR = "1F4E79"   # Azul oscuro
 PUT_HEADER_COLOR  = "7B2D00"   # Rojo oscuro
+INFO_HEADER_COLOR = "2E4057"   # Gris azulado
 HEADER_FONT_COLOR = "FFFFFF"   # Blanco
 ITM_FILL_COLOR    = "E8F5E9"   # Verde claro (In The Money)
 ALT_ROW_COLOR     = "F5F5F5"   # Gris muy claro (filas alternas)
 
 
-def _style_sheet(ws, header_color: str) -> None:
+def _style_sheet(ws: Worksheet, header_color: str) -> None:
     """Aplica formato al worksheet."""
     header_fill = PatternFill("solid", fgColor=header_color)
     header_font = Font(bold=True, color=HEADER_FONT_COLOR, size=10)
@@ -44,7 +46,7 @@ def _style_sheet(ws, header_color: str) -> None:
         cell.font      = header_font
         cell.alignment = center
 
-    # Encontrar el indice de la columna "inTheMoney" una sola vez — O(n) total
+    # Encontrar el indice de la columna "inTheMoney" una sola vez
     itm_col_idx = None
     for cell in ws[1]:
         if cell.value == "inTheMoney":
@@ -66,7 +68,7 @@ def _style_sheet(ws, header_color: str) -> None:
             elif row_idx % 2 == 0:
                 cell.fill = alt_fill
 
-    # Ancho de columnas automático
+    # Ancho de columnas automatico
     for col in ws.columns:
         max_len = max(
             (len(str(cell.value)) for cell in col if cell.value is not None),
@@ -78,6 +80,17 @@ def _style_sheet(ws, header_color: str) -> None:
     ws.freeze_panes = "A2"
 
 
+def _write_sheet(
+    writer: pd.ExcelWriter,
+    df: pd.DataFrame,
+    sheet_name: str,
+    header_color: str,
+) -> None:
+    """Escribe un DataFrame como sheet y aplica estilos."""
+    df.to_excel(writer, sheet_name=sheet_name, index=False)
+    _style_sheet(writer.sheets[sheet_name], header_color)
+
+
 def export_to_excel(
     calls_df: pd.DataFrame,
     puts_df: pd.DataFrame,
@@ -87,8 +100,14 @@ def export_to_excel(
     """
     Genera el archivo Excel con las sheets CALLS, PUTS e INFO.
 
+    Args:
+        calls_df:   DataFrame de calls devuelto por parse_option_chain().
+        puts_df:    DataFrame de puts devuelto por parse_option_chain().
+        symbol:     Ticker del subyacente (ej: "SPY"). Se convierte a uppercase.
+        expiration: Fecha de vencimiento usada para nombrar el archivo.
+
     Returns:
-        Path del archivo generado.
+        Path absoluto del archivo .xlsx generado en OUTPUT_DIR.
     """
     output_dir = pathlib.Path(config.OUTPUT_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -97,15 +116,10 @@ def export_to_excel(
     filepath = output_dir / filename
 
     with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
-        # ── CALLS ──────────────────────────────────────────
-        calls_df.to_excel(writer, sheet_name="CALLS", index=False)
-        _style_sheet(writer.sheets["CALLS"], CALL_HEADER_COLOR)
+        _write_sheet(writer, calls_df, "CALLS", CALL_HEADER_COLOR)
+        _write_sheet(writer, puts_df,  "PUTS",  PUT_HEADER_COLOR)
 
-        # ── PUTS ───────────────────────────────────────────
-        puts_df.to_excel(writer, sheet_name="PUTS", index=False)
-        _style_sheet(writer.sheets["PUTS"], PUT_HEADER_COLOR)
-
-        # ── INFO ───────────────────────────────────────────
+        # -- INFO -------------------------------------------
         info_data = {
             "Campo": [
                 "Subyacente",
@@ -124,8 +138,7 @@ def export_to_excel(
                 "Schwab Market Data API",
             ],
         }
-        pd.DataFrame(info_data).to_excel(writer, sheet_name="INFO", index=False)
-        _style_sheet(writer.sheets["INFO"], "2E4057")
+        _write_sheet(writer, pd.DataFrame(info_data), "INFO", INFO_HEADER_COLOR)
 
     print(f"[OK] Excel generado: {filepath}")
     return filepath

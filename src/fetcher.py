@@ -2,13 +2,13 @@
 src/fetcher.py
 Obtiene la cadena de opciones desde la Schwab API.
 
-Documentación del endpoint:
+Documentacion del endpoint:
   GET /marketdata/v1/chains
-  Parámetros clave: symbol, contractType, toDate, fromDate
+  Parametros clave: symbol, contractType, toDate, fromDate
 """
 
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 import schwab
 
 from src.auth import get_client
@@ -19,8 +19,8 @@ def fetch_option_chain(
     expiration: date,
     contract_type: str = "ALL",
     strike_count: Optional[int] = None,
-    client=None,
-) -> dict:
+    client: Optional[schwab.client.Client] = None,
+) -> dict[str, Any]:
     """
     Descarga la option chain completa para un subyacente y vencimiento.
 
@@ -38,10 +38,19 @@ def fetch_option_chain(
         dict con la respuesta cruda de la API (ver parser.py para transformar)
 
     Raises:
-        RuntimeError: Si la API devuelve un error o no hay datos.
+        ValueError:   Si contract_type no es "ALL", "CALL" o "PUT".
+        RuntimeError: Si la API devuelve un error, status FAILED, o no hay
+                      contratos para el simbolo/vencimiento solicitado.
     """
     if client is None:
         client = get_client()
+
+    valid_types = {"ALL", "CALL", "PUT"}
+    if contract_type not in valid_types:
+        raise ValueError(
+            f"contract_type invalido: '{contract_type}'. "
+            f"Valores validos: {valid_types}"
+        )
 
     kwargs = dict(
         symbol=symbol.upper(),
@@ -66,6 +75,14 @@ def fetch_option_chain(
     data = response.json()
 
     if data.get("status") == "FAILED":
-        raise RuntimeError(f"Schwab API devolvió status FAILED para {symbol}")
+        raise RuntimeError(f"Schwab API devolvio status FAILED para {symbol}")
+
+    call_map = data.get("callExpDateMap", {})
+    put_map  = data.get("putExpDateMap",  {})
+    if not call_map and not put_map:
+        raise RuntimeError(
+            f"No se encontraron opciones para '{symbol}' con vencimiento {expiration}. "
+            "Verifica que el simbolo y la fecha sean validos."
+        )
 
     return data

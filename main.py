@@ -8,9 +8,12 @@ Uso:
 """
 
 import argparse
-from datetime import date, datetime
+from datetime import datetime
+
+import sys
 
 import config
+from config       import ConfigError
 from src.auth     import get_client
 from src.fetcher  import fetch_option_chain
 from src.parser   import parse_option_chain
@@ -51,6 +54,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
     try:
         config.validate_config()
         args = parse_args()
@@ -75,7 +82,7 @@ def main() -> None:
 
         print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
 
-    except EnvironmentError as e:
+    except ConfigError as e:
         print(f"\n[ERROR] Configuracion: {e}")
         raise SystemExit(1)
     except RuntimeError as e:

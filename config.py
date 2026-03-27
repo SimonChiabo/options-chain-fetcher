@@ -16,7 +16,7 @@ SCHWAB_REDIRECT_URI  = os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1:8182"
 
 # -- Salida ---------------------------------------------------
 OUTPUT_DIR           = os.getenv("OUTPUT_DIR", "output")
-REFRESH_INTERVAL     = int(os.getenv("REFRESH_INTERVAL", 60))
+REFRESH_INTERVAL     = int(os.getenv("REFRESH_INTERVAL", "60"))
 
 # -- Columnas que se exportan al Excel ------------------------
 CALLS_COLUMNS = [
@@ -36,7 +36,16 @@ CALLS_COLUMNS = [
     "expirationDate",
 ]
 
-PUTS_COLUMNS = CALLS_COLUMNS  # misma estructura
+PUTS_COLUMNS = list(CALLS_COLUMNS)  # copia independiente
+
+NUMERIC_COLUMNS = [
+    "strike", "bid", "ask", "last", "volume", "openInterest",
+    "delta", "gamma", "theta", "vega", "impliedVolatility",
+]
+
+
+class ConfigError(Exception):
+    """Credenciales o variables de entorno faltantes."""
 
 
 def validate_config() -> None:
@@ -47,7 +56,7 @@ def validate_config() -> None:
     if not SCHWAB_CLIENT_SECRET:
         missing.append("SCHWAB_CLIENT_SECRET")
     if missing:
-        raise EnvironmentError(
+        raise ConfigError(
             f"Faltan variables de entorno: {', '.join(missing)}\n"
             "Copia .env.example a .env y completa tus credenciales."
         )

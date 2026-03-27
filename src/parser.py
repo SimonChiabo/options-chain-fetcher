@@ -73,11 +73,7 @@ def _to_dataframe(rows: list[dict], columns: list[str]) -> pd.DataFrame:
     df = df[available].copy()
 
     # Tipos
-    numeric_cols = [
-        "strike", "bid", "ask", "last", "volume", "openInterest",
-        "delta", "gamma", "theta", "vega", "impliedVolatility",
-    ]
-    for col in numeric_cols:
+    for col in config.NUMERIC_COLUMNS:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -86,7 +82,8 @@ def _to_dataframe(rows: list[dict], columns: list[str]) -> pd.DataFrame:
         df = df.sort_values("strike").reset_index(drop=True)
 
     # Columna spread para comodidad del analista
-    if "bid" in df.columns and "ask" in df.columns:
-        df.insert(3, "spread", (df["ask"] - df["bid"]).round(4))
+    if "bid" in df.columns and "ask" in df.columns and "spread" not in df.columns:
+        ask_pos = df.columns.get_loc("ask")
+        df.insert(ask_pos + 1, "spread", (df["ask"] - df["bid"]).round(4))
 
     return df
