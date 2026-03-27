@@ -98,3 +98,63 @@ def test_fetch_returns_data_when_valid():
     result = fetch_option_chain(symbol="SPY", expiration=EXPIRATION, client=client)
 
     assert result == valid_data
+
+
+# -- Tests de parametros pasados al cliente ----------------------------
+
+VALID_RESPONSE = {
+    "status": "SUCCESS",
+    "callExpDateMap": {"2025-06-20:30": {"500.0": [{"bid": 1.0}]}},
+    "putExpDateMap":  {"2025-06-20:30": {"500.0": [{"bid": 0.8}]}},
+}
+
+
+def _mock_client_with_response(data=None):
+    """Crea un mock client con response configurable."""
+    mock_response = MagicMock()
+    mock_response.ok = True
+    mock_response.json.return_value = data or VALID_RESPONSE
+    client = MagicMock()
+    client.get_option_chain.return_value = mock_response
+    return client
+
+
+def test_strike_count_is_passed_to_api_when_specified():
+    """Cuando se indica strike_count, debe llegar como kwarg al cliente."""
+    client = _mock_client_with_response()
+
+    fetch_option_chain(
+        symbol="SPY",
+        expiration=EXPIRATION,
+        strike_count=10,
+        client=client,
+    )
+
+    _, kwargs = client.get_option_chain.call_args
+    assert "strike_count" in kwargs, "strike_count no se paso al cliente de la API"
+    assert kwargs["strike_count"] == 10
+
+
+def test_strike_count_is_omitted_when_none():
+    """Cuando strike_count es None, NO debe aparecer en los kwargs."""
+    client = _mock_client_with_response()
+
+    fetch_option_chain(
+        symbol="SPY",
+        expiration=EXPIRATION,
+        strike_count=None,
+        client=client,
+    )
+
+    _, kwargs = client.get_option_chain.call_args
+    assert "strike_count" not in kwargs, "strike_count=None no debe pasarse a la API"
+
+
+def test_symbol_is_uppercased_before_api_call():
+    """El simbolo debe llegar en uppercase al cliente independientemente del input."""
+    client = _mock_client_with_response()
+
+    fetch_option_chain(symbol="spy", expiration=EXPIRATION, client=client)
+
+    _, kwargs = client.get_option_chain.call_args
+    assert kwargs["symbol"] == "SPY"
