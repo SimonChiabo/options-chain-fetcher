@@ -26,6 +26,11 @@ token*.json
 schwab_token*
 *.dat
 
+# Coverage
+.coverage
+htmlcov/
+.coverage.*
+
 # IDEs
 .vscode/
 .idea/
@@ -34,3 +39,10 @@ schwab_token*
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude Code
+.claude/
+
+# Coverage reports
+.coverage
+htmlcov/
