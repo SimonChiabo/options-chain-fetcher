@@ -44,15 +44,19 @@ def _style_sheet(ws, header_color: str) -> None:
         cell.font      = header_font
         cell.alignment = center
 
+    # Encontrar el indice de la columna "inTheMoney" una sola vez — O(n) total
+    itm_col_idx = None
+    for cell in ws[1]:
+        if cell.value == "inTheMoney":
+            itm_col_idx = cell.column
+            break
+
     # Filas de datos
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         is_itm = False
-        for cell in row:
-            # Detectar si la columna inTheMoney es True
-            if ws.cell(row=row_idx, column=1).value is not None:
-                header_val = ws.cell(row=1, column=cell.column).value
-                if header_val == "inTheMoney" and cell.value is True:
-                    is_itm = True
+        if itm_col_idx is not None:
+            val = ws.cell(row=row_idx, column=itm_col_idx).value
+            is_itm = val is True or str(val).lower() == "true"
 
         for cell in row:
             cell.alignment = center
@@ -123,5 +127,5 @@ def export_to_excel(
         pd.DataFrame(info_data).to_excel(writer, sheet_name="INFO", index=False)
         _style_sheet(writer.sheets["INFO"], "2E4057")
 
-    print(f"✅ Excel generado: {filepath}")
+    print(f"[OK] Excel generado: {filepath}")
     return filepath

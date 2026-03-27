@@ -12,7 +12,7 @@ load_dotenv()
 # -- Schwab API ----------------------------------------------
 SCHWAB_CLIENT_ID     = os.getenv("SCHWAB_CLIENT_ID", "")
 SCHWAB_CLIENT_SECRET = os.getenv("SCHWAB_CLIENT_SECRET", "")
-SCHWAB_REDIRECT_URI  = os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1:8182")
+SCHWAB_REDIRECT_URI  = os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1:8182")  # puerto obligatorio
 
 # -- Salida ---------------------------------------------------
 OUTPUT_DIR           = os.getenv("OUTPUT_DIR", "output")
@@ -23,6 +23,7 @@ CALLS_COLUMNS = [
     "strike",
     "bid",
     "ask",
+    "spread",
     "last",
     "volume",
     "openInterest",
@@ -48,5 +49,5 @@ def validate_config() -> None:
     if missing:
         raise EnvironmentError(
             f"Faltan variables de entorno: {', '.join(missing)}\n"
-            "Copia .env.example -> .env y completa tus credenciales."
+            "Copia .env.example a .env y completa tus credenciales."
         )

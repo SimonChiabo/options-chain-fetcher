@@ -19,6 +19,7 @@ def fetch_option_chain(
     expiration: date,
     contract_type: str = "ALL",
     strike_count: Optional[int] = None,
+    client=None,
 ) -> dict:
     """
     Descarga la option chain completa para un subyacente y vencimiento.
@@ -29,6 +30,9 @@ def fetch_option_chain(
         contract_type: "CALL", "PUT" o "ALL" (default)
         strike_count:  Cantidad de strikes a cada lado del ATM.
                        None = todos los strikes disponibles.
+        client:        Cliente autenticado de Schwab. Si es None, se crea
+                       uno nuevo llamando a get_client(). Pasar el cliente
+                       explicitamente evita re-autenticar en llamadas multiples.
 
     Returns:
         dict con la respuesta cruda de la API (ver parser.py para transformar)
@@ -36,7 +40,8 @@ def fetch_option_chain(
     Raises:
         RuntimeError: Si la API devuelve un error o no hay datos.
     """
-    client = get_client()
+    if client is None:
+        client = get_client()
 
     kwargs = dict(
         symbol=symbol.upper(),

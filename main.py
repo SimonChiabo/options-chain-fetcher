@@ -10,6 +10,8 @@ Uso:
 import argparse
 from datetime import date, datetime
 
+import config
+from src.auth     import get_client
 from src.fetcher  import fetch_option_chain
 from src.parser   import parse_option_chain
 from src.exporter import export_to_excel
@@ -49,24 +51,36 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    args = parse_args()
+    try:
+        config.validate_config()
+        args = parse_args()
 
-    print(f"\n[*] Descargando option chain: {args.symbol} | Vencimiento: {args.expiration}")
+        print(f"\n[*] Descargando option chain: {args.symbol} | Vencimiento: {args.expiration}")
 
-    raw = fetch_option_chain(
-        symbol=args.symbol,
-        expiration=args.expiration,
-        contract_type=args.type,
-        strike_count=args.strikes,
-    )
+        client = get_client()
 
-    calls_df, puts_df = parse_option_chain(raw, args.expiration)
+        raw = fetch_option_chain(
+            symbol=args.symbol,
+            expiration=args.expiration,
+            contract_type=args.type,
+            strike_count=args.strikes,
+            client=client,
+        )
 
-    print(f"    -> {len(calls_df)} calls | {len(puts_df)} puts encontradas")
+        calls_df, puts_df = parse_option_chain(raw, args.expiration)
 
-    filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration)
+        print(f"    -> {len(calls_df)} calls | {len(puts_df)} puts encontradas")
 
-    print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
+        filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration)
+
+        print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
+
+    except EnvironmentError as e:
+        print(f"\n[ERROR] Configuracion: {e}")
+        raise SystemExit(1)
+    except RuntimeError as e:
+        print(f"\n[ERROR] API: {e}")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

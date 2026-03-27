@@ -15,7 +15,7 @@ import schwab
 
 import config
 
-TOKEN_PATH = pathlib.Path("token.pickle")
+TOKEN_PATH = pathlib.Path(__file__).parent.parent / "token.pickle"
 
 
 def get_client() -> schwab.client.Client:
@@ -45,6 +45,6 @@ def get_client() -> schwab.client.Client:
             callback_url=config.SCHWAB_REDIRECT_URI,
             token_path=str(TOKEN_PATH),
         )
-        print(f"[OK] Token guardado en {TOKEN_PATH}")
+        print(f"[OK] Token guardado en: {TOKEN_PATH}")
 
     return client

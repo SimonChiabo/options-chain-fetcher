@@ -35,8 +35,8 @@ def _extract_legs(exp_date_map: dict, expiration: date) -> list[dict]:
             continue
         for strike_price, contracts in strikes.items():
             for contract in contracts:
-                contract["strike"] = float(strike_price)
-                rows.append(contract)
+                row = {**contract, "strike": float(strike_price)}
+                rows.append(row)
 
     return rows
 
