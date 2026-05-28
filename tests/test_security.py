@@ -3,9 +3,10 @@ tests/test_security.py
 Tests de seguridad: validacion de inputs, path traversal, caracteres especiales.
 """
 
+import sys
 import pytest
 
-from main import _validate_symbol
+from main import _validate_symbol, parse_args
 
 
 class TestValidateSymbol:
@@ -50,3 +51,23 @@ class TestValidateSymbol:
     def test_slash_blocked(self):
         with pytest.raises(ValueError, match="Simbolo invalido"):
             _validate_symbol("SPY/PUT")
+
+
+class TestParseArgs:
+    def test_required_args_parsed(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["main.py", "--symbol", "SPY", "--expiration", "2025-06-20"])
+        args = parse_args()
+        assert args.symbol == "SPY"
+        assert str(args.expiration) == "2025-06-20"
+
+    def test_optional_args_defaults(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["main.py", "--symbol", "SPY", "--expiration", "2025-06-20"])
+        args = parse_args()
+        assert args.strikes is None
+        assert args.type == "ALL"
+
+    def test_strikes_and_type_parsed(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["main.py", "-s", "QQQ", "-e", "2025-07-18", "-k", "10", "-t", "CALL"])
+        args = parse_args()
+        assert args.strikes == 10
+        assert args.type == "CALL"
