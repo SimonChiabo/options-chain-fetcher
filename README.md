@@ -1,215 +1,97 @@
 # Options Chain Fetcher
 
-Herramienta Python para obtener cadenas de opciones (puts & calls) en tiempo real desde la **Schwab API** (ex TD Ameritrade) y exportarlas a Excel para analisis financiero profesional.
+[![Tests](https://github.com/simonchiabo/options-chain-fetcher/actions/workflows/tests.yml/badge.svg)](https://github.com/simonchiabo/options-chain-fetcher/actions)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
+CLI que descarga options chains desde la **Schwab API** y las exporta a Excel con formato, Greeks, Max Pain y P/C Ratio.
 
-## Objetivo
+## Features
 
-Proveer a un analista financiero una hoja Excel actualizable con:
-- Cadena completa de opciones (calls y puts) por subyacente
-- Filtro por vencimiento
-- Precios **bid / ask** por strike
-- Greeks (delta, gamma, theta, vega)
-- Volumen y Open Interest
-
----
-
-## Arquitectura
-
-```
-Schwab API (OAuth2)
-       |
-  Python Script
-  (auth + fetch + parse)
-       |
-   Excel (.xlsx)
-   |-- Sheet: CALLS
-   |-- Sheet: PUTS
-   +-- Sheet: SUMMARY
-       |
-  Excel Power Query
-  (auto-refresh con VBA)
-```
-
----
-
-## Estructura del proyecto
-
-```
-options-chain-fetcher/
-├── src/
-│   ├── __init__.py
-│   ├── auth.py          # OAuth2 con Schwab API
-│   ├── fetcher.py       # Llamadas a la API (option chains)
-│   ├── parser.py        # Transformacion de datos a DataFrame
-│   └── exporter.py      # Exportacion a .xlsx
-├── tests/
-│   ├── __init__.py
-│   ├── test_fetcher.py
-│   └── test_parser.py
-├── docs/
-│   └── schwab_setup.md  # Guia para configurar credenciales
-├── output/              # Archivos .xlsx generados (gitignored)
-├── main.py              # Entry point
-├── config.py            # Configuracion general
-├── requirements.txt
-├── .env.example         # Template de variables de entorno
-├── .gitignore
-└── README.md
-```
-
----
+- Greeks completos (Delta, Gamma, Theta, Vega) exportados directamente
+- **Max Pain** calculado automaticamente desde el Open Interest
+- **Put/Call Ratio** por volumen y por OI con interpretacion de sentimiento
+- **Breakeven** calculado para cada contrato (strike +/- midpoint)
+- Excel con sheets CALLS / PUTS / ANALYSIS / INFO y filas ITM destacadas en verde
+- Output en terminal con tabla rich y colores
 
 ## Instalacion
 
-### Prerequisitos
-
-- Python 3.10 o superior
-- Git
-- Cuenta en [developer.schwab.com](https://developer.schwab.com) con app registrada (ver seccion Credenciales)
-
-### Paso a paso
-
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/SimonChiabo/options-chain-fetcher.git
+git clone https://github.com/simonchiabo/options-chain-fetcher.git
 cd options-chain-fetcher
-
-# 2. Crear entorno virtual
 python -m venv .venv
-```
-
-### Activar el entorno virtual
-
-El comando para activar el entorno virtual depende de tu terminal:
-
-| Terminal | Comando |
-|---|---|
-| Git Bash (Windows) | `source .venv/Scripts/activate` |
-| PowerShell (Windows) | `.venv\Scripts\Activate.ps1` |
-| CMD (Windows) | `.venv\Scripts\activate.bat` |
-| macOS / Linux | `source .venv/bin/activate` |
-
-Sabras que esta activo cuando veas `(.venv)` al inicio de la linea.
-
-```bash
-# 3. Instalar dependencias
+source .venv/Scripts/activate  # Windows Git Bash
 pip install -r requirements.txt
-
-# 4. Configurar credenciales
-cp .env.example .env
-# --> Editar .env con tus credenciales de Schwab (ver seccion Credenciales)
+cp .env.example .env            # completar con tus credenciales Schwab
 ```
-
----
 
 ## Uso
 
-### Comando basico
-
-En **Git Bash (Windows)**, usar el prefijo de encoding:
-
 ```bash
-PYTHONIOENCODING=utf-8 python main.py --symbol SPY --expiration 2025-06-20
-```
-
-En **macOS / Linux / PowerShell**:
-
-```bash
+# Cadena completa para SPY vencimiento 2025-06-20
 python main.py --symbol SPY --expiration 2025-06-20
+
+# Solo calls, 10 strikes alrededor del ATM
+python main.py -s QQQ -e 2025-07-18 -k 10 -t CALL
+
+# Multiples vencimientos con IV Skew
+python main.py -s SPY -E "2025-06-20,2025-07-18,2025-08-15"
 ```
 
-### Parametros disponibles
+## Output
 
-| Parametro | Requerido | Descripcion | Ejemplo |
-|---|---|---|---|
-| `--symbol` / `-s` | Si | Ticker del subyacente | `SPY`, `QQQ`, `AAPL` |
-| `--expiration` / `-e` | Si | Fecha de vencimiento (YYYY-MM-DD) | `2025-06-20` |
-| `--strikes` / `-k` | No | Cantidad de strikes a cada lado del ATM | `20` |
-| `--type` / `-t` | No | Tipo de contrato: ALL, CALL o PUT | `ALL` |
+```
+[*] Descargando option chain: SPY | Vencimiento: 2025-06-20
 
-### Salida
+  Metrica                   Valor
+  Calls encontradas         247
+  Puts encontradas          247
+  Max Pain Strike           $585.00
+  P/C Ratio (Volumen)       1.23
+  P/C Ratio (OI)            0.98
 
-El comando genera `output/{SYMBOL}_{YYYYMMDD}_options.xlsx` con tres sheets:
-- **CALLS** - Cadena de calls con bid/ask, volume, OI, Greeks
-- **PUTS** - Cadena de puts con bid/ask, volume, OI, Greeks
-- **SUMMARY** - Metricas clave (IV media, P/C Ratio, dias al vencimiento)
+[OK] Excel generado: output/SPY_20250620_options.xlsx
+```
 
----
-
-## Primera autenticacion
-
-La primera vez que corras el script:
-
-1. Se abre el navegador con la pagina de login de Schwab
-2. Inicia sesion con tu **cuenta de trading** de Schwab (no la de developer)
-3. El navegador muestra una **advertencia de certificado SSL** - esto es normal y seguro. Haz clic en "Avanzado" > "Continuar al sitio"
-4. El token se guarda automaticamente en `token.pickle`
-5. Las siguientes ejecuciones reusan el token (se refresca automaticamente)
-
-**Nota:** El refresh token expira cada 7 dias. Cuando eso ocurra, elimina `token.pickle` y vuelve a autenticarte.
-
----
-
-## Credenciales Schwab
-
-Ver guia completa en [`docs/schwab_setup.md`](docs/schwab_setup.md).
-
-En resumen:
-1. Crear cuenta de desarrollador en [developer.schwab.com](https://developer.schwab.com) (separada de la cuenta de trading)
-2. Registrar una nueva app con estos datos:
-   - **App Name:** `options-chain-fetcher`
-   - **Callback URL:** `https://127.0.0.1:8182` (con puerto, obligatorio)
-   - **API Product:** Market Data Production
-3. Obtener `Client ID` (App Key) y `Client Secret`
-4. Esperar a que el status de la app sea **Active/Approved**
-5. Copiar credenciales al archivo `.env`
-
-**IMPORTANTE:** La Callback URL en el portal y `SCHWAB_REDIRECT_URI` en `.env` deben coincidir exactamente: `https://127.0.0.1:8182`
-
----
-
-## Dependencias principales
-
-| Paquete | Uso |
+El Excel contiene:
+| Sheet | Contenido |
 |---|---|
-| `schwab-py` | Cliente oficial para Schwab API |
-| `pandas` | Manipulacion de datos |
-| `openpyxl` | Exportacion a Excel |
-| `python-dotenv` | Manejo de variables de entorno |
-| `argparse` | CLI para parametros de entrada |
+| **CALLS** | Cadena de calls con Greeks, breakeven, spread, ITM destacado |
+| **PUTS** | Cadena de puts con la misma estructura |
+| **ANALYSIS** | Max Pain, P/C Ratio (Vol y OI), totales |
+| **INFO** | Metadatos: simbolo, fecha, hora de descarga, fuente |
 
----
+## Configuracion (.env)
 
-## Troubleshooting
+```
+SCHWAB_CLIENT_ID=tu_app_key
+SCHWAB_CLIENT_SECRET=tu_app_secret
+SCHWAB_REDIRECT_URI=https://127.0.0.1:8182
+OUTPUT_DIR=output
+```
 
-| Problema | Solucion |
-|---|---|
-| `UnicodeEncodeError` con emojis en Windows | Usar `PYTHONIOENCODING=utf-8` antes del comando |
-| `RedirectServerExitedError` | Verificar que la Callback URL incluya `:8182` tanto en `.env` como en el portal de Schwab |
-| `command not found: activate` en Git Bash | Usar `source .venv/Scripts/activate` (con `source` y barras `/`) |
-| Advertencia SSL en el navegador | Normal. Hacer clic en "Avanzado" > "Continuar" |
-| Token expirado despues de 7 dias | Eliminar `token.pickle` y volver a correr el script |
+Ver `docs/schwab_setup.md` para crear la app en el portal de Schwab.
 
----
+## Tests
 
-## Roadmap
+```bash
+python -m pytest --cov=src --cov=main --cov=config -q
+```
 
-- [x] Estructura base del proyecto
-- [x] Autenticacion OAuth2
-- [x] Fetch de option chains
-- [x] Parser a DataFrame
-- [x] Exportador Excel con formato
-- [ ] Power Query + macro VBA para Excel
-- [ ] Refresh automatico (scheduler)
-- [ ] Soporte multi-subyacente
-- [ ] Validacion de inputs (simbolo, fecha, formato)
-- [ ] Interfaz web (Streamlit)
-- [ ] GitHub Actions CI
+53+ tests, 86%+ coverage. Sin mocks de BD: todos los tests usan datos locales.
 
----
+## Estructura
 
-## Autores
-
-Proyecto colaborativo entre desarrollador Python y analista financiero profesional.
+```
+options-chain-fetcher/
+  main.py          # CLI entry point
+  config.py        # Variables de entorno y constantes
+  src/
+    auth.py        # OAuth2 con schwab-py
+    fetcher.py     # GET /marketdata/v1/chains
+    parser.py      # JSON -> DataFrames + breakeven
+    analyzer.py    # Max Pain, P/C Ratio, IV Skew
+    exporter.py    # DataFrames -> Excel formateado
+  tests/           # 53+ tests con pytest
+```
