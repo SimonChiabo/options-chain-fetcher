@@ -18,6 +18,7 @@ from src.auth     import get_client
 from src.fetcher  import fetch_option_chain
 from src.parser   import parse_option_chain
 from src.exporter import export_to_excel
+from src.analyzer import calculate_max_pain, calculate_pc_ratio
 
 
 def _validate_symbol(symbol: str) -> str:
@@ -87,9 +88,15 @@ def main() -> None:
 
         calls_df, puts_df = parse_option_chain(raw, args.expiration)
 
-        print(f"    -> {len(calls_df)} calls | {len(puts_df)} puts encontradas")
+        max_pain = calculate_max_pain(calls_df, puts_df)
+        pc_ratio = calculate_pc_ratio(calls_df, puts_df)
+        analysis = {"max_pain": max_pain, "pc_ratio": pc_ratio}
 
-        filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration)
+        print(f"    -> {len(calls_df)} calls | {len(puts_df)} puts encontradas")
+        print(f"    -> Max Pain: ${max_pain['strike']:.2f}")
+        print(f"    -> P/C Ratio  Vol: {pc_ratio['volume_ratio']:.2f}  |  OI: {pc_ratio['oi_ratio']:.2f}")
+
+        filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration, analysis=analysis)
 
         print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
 
