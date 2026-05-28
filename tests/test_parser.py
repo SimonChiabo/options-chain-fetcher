@@ -106,3 +106,34 @@ def test_wrong_expiration_returns_empty(mock_raw):
     calls, puts = parse_option_chain(mock_raw, wrong_date)
     assert calls.empty
     assert puts.empty
+
+
+def test_calls_have_breakeven_column(mock_raw):
+    calls, _ = parse_option_chain(mock_raw, MOCK_EXPIRATION)
+    assert "breakeven" in calls.columns
+
+
+def test_puts_have_breakeven_column(mock_raw):
+    _, puts = parse_option_chain(mock_raw, MOCK_EXPIRATION)
+    assert "breakeven" in puts.columns
+
+
+def test_call_breakeven_value(mock_raw):
+    # strike=575, bid=12.0, ask=12.2, midpoint=12.1 => breakeven=587.1
+    calls, _ = parse_option_chain(mock_raw, MOCK_EXPIRATION)
+    row = calls[calls["strike"] == 575.0].iloc[0]
+    assert abs(row["breakeven"] - 587.1) < 0.01
+
+
+def test_put_breakeven_value(mock_raw):
+    # strike=575, bid=7.5, ask=7.7, midpoint=7.6 => breakeven=567.4
+    _, puts = parse_option_chain(mock_raw, MOCK_EXPIRATION)
+    row = puts[puts["strike"] == 575.0].iloc[0]
+    assert abs(row["breakeven"] - 567.4) < 0.01
+
+
+def test_breakeven_empty_dataframe():
+    calls, puts = parse_option_chain({}, MOCK_EXPIRATION)
+    # No debe lanzar excepcion con DataFrames vacios
+    assert calls.empty
+    assert puts.empty
