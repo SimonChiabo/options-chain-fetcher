@@ -2,7 +2,8 @@
 
 import pandas as pd
 import pytest
-from src.analyzer import calculate_max_pain, calculate_pc_ratio
+from datetime import date
+from src.analyzer import calculate_max_pain, calculate_pc_ratio, calculate_iv_skew
 
 
 def _make_df(strikes, oi, vol=None):
@@ -70,3 +71,50 @@ class TestPCRatio:
         puts  = _make_df([100], [200], [50])
         result = calculate_pc_ratio(calls, puts)
         assert result["oi_ratio"] == float("inf")
+
+
+class TestIVSkew:
+    def _calls(self, strikes, ivs):
+        return pd.DataFrame({"strike": [float(s) for s in strikes], "impliedVolatility": ivs})
+
+    def _puts(self, strikes, ivs):
+        return pd.DataFrame({"strike": [float(s) for s in strikes], "impliedVolatility": ivs})
+
+    def test_iv_skew_returns_dataframe(self):
+        exp = date(2025, 6, 20)
+        data = {exp: (self._calls([100, 105], [0.20, 0.18]), self._puts([100, 105], [0.22, 0.21]))}
+        skew = calculate_iv_skew(data)
+        assert isinstance(skew, pd.DataFrame)
+
+    def test_iv_skew_has_strike_column(self):
+        exp = date(2025, 6, 20)
+        data = {exp: (self._calls([100], [0.20]), self._puts([100], [0.22]))}
+        skew = calculate_iv_skew(data)
+        assert "strike" in skew.columns
+
+    def test_iv_skew_has_expiration_column(self):
+        exp = date(2025, 6, 20)
+        data = {exp: (self._calls([100], [0.20]), self._puts([100], [0.22]))}
+        skew = calculate_iv_skew(data)
+        assert "2025-06-20" in skew.columns
+
+    def test_iv_skew_multiple_expirations(self):
+        exp1 = date(2025, 6, 20)
+        exp2 = date(2025, 7, 18)
+        data = {
+            exp1: (self._calls([100], [0.20]), self._puts([100], [0.22])),
+            exp2: (self._calls([100], [0.25]), self._puts([100], [0.26])),
+        }
+        skew = calculate_iv_skew(data)
+        assert set(skew.columns) == {"strike", "2025-06-20", "2025-07-18"}
+
+    def test_iv_skew_call_iv_values(self):
+        exp = date(2025, 6, 20)
+        data = {exp: (self._calls([100.0], [0.20]), self._puts([100.0], [0.22]))}
+        skew = calculate_iv_skew(data)
+        row = skew[skew["strike"] == 100.0].iloc[0]
+        assert abs(row["2025-06-20"] - 0.20) < 0.001
+
+    def test_iv_skew_empty_data(self):
+        skew = calculate_iv_skew({})
+        assert skew.empty

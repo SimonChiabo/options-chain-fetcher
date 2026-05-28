@@ -3,6 +3,7 @@ src/analyzer.py
 Calculos de dominio financiero sobre option chains.
 """
 
+from datetime import date
 from typing import Any
 import pandas as pd
 
@@ -58,3 +59,37 @@ def calculate_pc_ratio(
         "volume_ratio": round(put_vol / call_vol, 4) if call_vol > 0 else float("inf"),
         "oi_ratio":     round(put_oi  / call_oi,  4) if call_oi  > 0 else float("inf"),
     }
+
+
+def calculate_iv_skew(
+    expirations_data: dict[date, tuple[pd.DataFrame, pd.DataFrame]],
+) -> pd.DataFrame:
+    """
+    Tabla de volatility skew por strike y vencimiento, usando IV de calls.
+
+    Returns:
+        DataFrame con strikes como filas y fechas de vencimiento como columnas.
+    """
+    if not expirations_data:
+        return pd.DataFrame()
+
+    all_strikes: set[float] = set()
+    for calls_df, puts_df in expirations_data.values():
+        if "strike" in calls_df.columns:
+            all_strikes |= set(calls_df["strike"].tolist())
+        if "strike" in puts_df.columns:
+            all_strikes |= set(puts_df["strike"].tolist())
+
+    sorted_strikes = sorted(all_strikes)
+    table: dict[str, list] = {"strike": sorted_strikes}
+
+    for exp in sorted(expirations_data):
+        calls_df, _ = expirations_data[exp]
+        col = exp.strftime("%Y-%m-%d")
+        if "impliedVolatility" in calls_df.columns and "strike" in calls_df.columns:
+            iv_map = dict(zip(calls_df["strike"], calls_df["impliedVolatility"]))
+        else:
+            iv_map = {}
+        table[col] = [iv_map.get(s) for s in sorted_strikes]
+
+    return pd.DataFrame(table)
