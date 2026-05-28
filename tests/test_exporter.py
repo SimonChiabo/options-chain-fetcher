@@ -88,3 +88,51 @@ def test_itm_detection(tmp_path, monkeypatch):
     assert not non_itm_row_fill.upper().endswith(ITM_FILL_COLOR.upper()), (
         "Una fila no-ITM no debe tener el color ITM"
     )
+
+
+def _analysis_fixture():
+    return {
+        "max_pain": {"strike": 500.0, "pain_by_strike": {500.0: 100.0, 505.0: 200.0}},
+        "pc_ratio": {"volume_ratio": 1.25, "oi_ratio": 0.8750},
+    }
+
+
+def test_analysis_sheet_created_when_analysis_provided(tmp_path, monkeypatch):
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    filepath = export_to_excel(
+        _minimal_calls(), _minimal_puts(), "SPY", EXPIRATION,
+        analysis=_analysis_fixture(),
+    )
+    wb = openpyxl.load_workbook(filepath)
+    assert "ANALYSIS" in wb.sheetnames
+
+
+def test_analysis_sheet_absent_without_analysis(tmp_path, monkeypatch):
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    filepath = export_to_excel(_minimal_calls(), _minimal_puts(), "SPY", EXPIRATION)
+    wb = openpyxl.load_workbook(filepath)
+    assert "ANALYSIS" not in wb.sheetnames
+
+
+def test_analysis_sheet_contains_max_pain(tmp_path, monkeypatch):
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    filepath = export_to_excel(
+        _minimal_calls(), _minimal_puts(), "SPY", EXPIRATION,
+        analysis=_analysis_fixture(),
+    )
+    wb = openpyxl.load_workbook(filepath)
+    ws = wb["ANALYSIS"]
+    all_values = [ws.cell(row=r, column=2).value for r in range(2, ws.max_row + 1)]
+    assert "$500.00" in all_values
+
+
+def test_analysis_sheet_contains_pc_ratio(tmp_path, monkeypatch):
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    filepath = export_to_excel(
+        _minimal_calls(), _minimal_puts(), "SPY", EXPIRATION,
+        analysis=_analysis_fixture(),
+    )
+    wb = openpyxl.load_workbook(filepath)
+    ws = wb["ANALYSIS"]
+    all_values = [ws.cell(row=r, column=2).value for r in range(2, ws.max_row + 1)]
+    assert "1.2500" in all_values

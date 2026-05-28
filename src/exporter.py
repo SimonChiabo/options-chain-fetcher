@@ -91,11 +91,51 @@ def _write_sheet(
     _style_sheet(writer.sheets[sheet_name], header_color)
 
 
+def _write_analysis_sheet(
+    writer: pd.ExcelWriter,
+    analysis: dict,
+    calls_df: pd.DataFrame,
+    puts_df: pd.DataFrame,
+) -> None:
+    max_pain = analysis.get("max_pain", {})
+    pc_ratio = analysis.get("pc_ratio", {})
+
+    mp_strike = max_pain.get("strike")
+    vol_ratio = pc_ratio.get("volume_ratio")
+    oi_ratio  = pc_ratio.get("oi_ratio")
+
+    data = {
+        "Metrica": [
+            "Max Pain Strike",
+            "P/C Ratio (Volumen)",
+            "P/C Ratio (Open Interest)",
+            "Total Calls",
+            "Total Puts",
+        ],
+        "Valor": [
+            f"${mp_strike:.2f}" if isinstance(mp_strike, (int, float)) else "N/A",
+            f"{vol_ratio:.4f}"  if isinstance(vol_ratio, float) and vol_ratio != float("inf") else str(vol_ratio),
+            f"{oi_ratio:.4f}"   if isinstance(oi_ratio,  float) and oi_ratio  != float("inf") else str(oi_ratio),
+            str(len(calls_df)),
+            str(len(puts_df)),
+        ],
+        "Interpretacion": [
+            "Strike donde la mayoria de opciones expira worthless",
+            "> 1.0 bearish  /  < 1.0 bullish",
+            "> 1.0 bearish  /  < 1.0 bullish",
+            "",
+            "",
+        ],
+    }
+    _write_sheet(writer, pd.DataFrame(data), "ANALYSIS", INFO_HEADER_COLOR)
+
+
 def export_to_excel(
     calls_df: pd.DataFrame,
     puts_df: pd.DataFrame,
     symbol: str,
     expiration: date,
+    analysis: dict | None = None,
 ) -> pathlib.Path:
     """
     Genera el archivo Excel con las sheets CALLS, PUTS e INFO.
@@ -118,6 +158,9 @@ def export_to_excel(
     with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
         _write_sheet(writer, calls_df, "CALLS", CALL_HEADER_COLOR)
         _write_sheet(writer, puts_df,  "PUTS",  PUT_HEADER_COLOR)
+
+        if analysis is not None:
+            _write_analysis_sheet(writer, analysis, calls_df, puts_df)
 
         # -- INFO -------------------------------------------
         info_data = {
