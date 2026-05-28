@@ -3,7 +3,6 @@ src/analyzer.py
 Calculos de dominio financiero sobre option chains.
 """
 
-from datetime import date
 from typing import Any
 import pandas as pd
 
@@ -13,12 +12,7 @@ def calculate_max_pain(
     puts_df: pd.DataFrame,
 ) -> dict[str, Any]:
     """
-    Calcula el Max Pain strike.
-
-    Para cada strike candidato S:
-      call_value = sum(K < S): (S - K) * call_OI[K]
-      put_value  = sum(K > S): (K - S) * put_OI[K]
-    Max Pain = S que minimiza (call_value + put_value).
+    Calcula el Max Pain strike: S que minimiza el valor total de opciones para compradores.
 
     Returns:
         {"strike": float, "pain_by_strike": dict[float, float]}
@@ -51,8 +45,6 @@ def calculate_pc_ratio(
 ) -> dict[str, float]:
     """
     Calcula el Put/Call Ratio por volumen y por Open Interest.
-
-    > 1.0 => sentimiento bearish, < 1.0 => sentimiento bullish.
 
     Returns:
         {"volume_ratio": float, "oi_ratio": float}
