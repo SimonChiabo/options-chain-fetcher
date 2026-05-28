@@ -12,6 +12,9 @@ import re
 import sys
 from datetime import datetime
 
+from rich.console import Console
+from rich.table import Table
+
 import config
 from config       import ConfigError
 from src.auth     import get_client
@@ -19,6 +22,8 @@ from src.fetcher  import fetch_option_chain
 from src.parser   import parse_option_chain
 from src.exporter import export_to_excel
 from src.analyzer import calculate_max_pain, calculate_pc_ratio
+
+console = Console()
 
 
 def _validate_symbol(symbol: str) -> str:
@@ -74,7 +79,10 @@ def main() -> None:
         args = parse_args()
         args.symbol = _validate_symbol(args.symbol)
 
-        print(f"\n[*] Descargando option chain: {args.symbol} | Vencimiento: {args.expiration}")
+        console.print(
+            f"\n[bold cyan][*][/bold cyan] Descargando option chain: "
+            f"[bold]{args.symbol}[/bold] | Vencimiento: {args.expiration}"
+        )
 
         client = get_client()
 
@@ -92,19 +100,25 @@ def main() -> None:
         pc_ratio = calculate_pc_ratio(calls_df, puts_df)
         analysis = {"max_pain": max_pain, "pc_ratio": pc_ratio}
 
-        print(f"    -> {len(calls_df)} calls | {len(puts_df)} puts encontradas")
-        print(f"    -> Max Pain: ${max_pain['strike']:.2f}")
-        print(f"    -> P/C Ratio  Vol: {pc_ratio['volume_ratio']:.2f}  |  OI: {pc_ratio['oi_ratio']:.2f}")
+        table = Table(show_header=True, header_style="bold magenta", box=None)
+        table.add_column("Metrica", style="cyan", min_width=22)
+        table.add_column("Valor",   style="bold green")
+        table.add_row("Calls encontradas",   str(len(calls_df)))
+        table.add_row("Puts encontradas",    str(len(puts_df)))
+        table.add_row("Max Pain Strike",     f"${max_pain['strike']:.2f}")
+        table.add_row("P/C Ratio (Volumen)", f"{pc_ratio['volume_ratio']:.2f}")
+        table.add_row("P/C Ratio (OI)",      f"{pc_ratio['oi_ratio']:.2f}")
+        console.print(table)
 
         filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration, analysis=analysis)
 
-        print(f"\n[OK] Listo. Abri el archivo: {filepath}\n")
+        console.print(f"\n[bold green][OK][/bold green] Abri el archivo: [underline]{filepath}[/underline]\n")
 
     except (ValueError, ConfigError) as e:
-        print(f"\n[ERROR] {e}")
+        console.print(f"\n[bold red][ERROR][/bold red] {e}")
         raise SystemExit(1)
     except RuntimeError as e:
-        print(f"\n[ERROR] API: {e}")
+        console.print(f"\n[bold red][ERROR][/bold red] API: {e}")
         raise SystemExit(1)
 
 
