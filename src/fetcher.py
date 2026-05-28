@@ -89,3 +89,25 @@ def fetch_option_chain(
         )
 
     return data
+
+
+def fetch_multiple_expirations(
+    symbol: str,
+    expirations: list[date],
+    contract_type: str = "ALL",
+    strike_count: Optional[int] = None,
+    client: Optional[schwab.client.Client] = None,
+) -> dict[date, dict[str, Any]]:
+    """
+    Descarga la option chain para multiples vencimientos reusando el mismo cliente.
+
+    Returns:
+        {expiration: raw_data} con la misma estructura que fetch_option_chain().
+    """
+    if client is None:
+        client = get_client()
+
+    return {
+        exp: fetch_option_chain(symbol, exp, contract_type, strike_count, client)
+        for exp in expirations
+    }

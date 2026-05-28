@@ -158,3 +158,39 @@ def test_symbol_is_uppercased_before_api_call():
 
     _, kwargs = client.get_option_chain.call_args
     assert kwargs["symbol"] == "SPY"
+
+
+# -- Tests para fetch_multiple_expirations --------------------------------
+
+from src.fetcher import fetch_multiple_expirations
+
+
+VALID_MULTI = {
+    "status": "SUCCESS",
+    "callExpDateMap": {"2025-06-20:30": {"500.0": [{"bid": 1.0}]}},
+    "putExpDateMap":  {"2025-06-20:30": {"500.0": [{"bid": 0.8}]}},
+}
+
+
+def test_fetch_multiple_returns_dict_keyed_by_date():
+    exp1 = date(2025, 6, 20)
+    exp2 = date(2025, 7, 18)
+    client = _mock_client_with_response(VALID_MULTI)
+    results = fetch_multiple_expirations("SPY", [exp1, exp2], client=client)
+    assert set(results.keys()) == {exp1, exp2}
+
+
+def test_fetch_multiple_calls_api_once_per_expiration():
+    exp1 = date(2025, 6, 20)
+    exp2 = date(2025, 7, 18)
+    client = _mock_client_with_response(VALID_MULTI)
+    fetch_multiple_expirations("SPY", [exp1, exp2], client=client)
+    assert client.get_option_chain.call_count == 2
+
+
+def test_fetch_multiple_single_expiration_works():
+    exp = date(2025, 6, 20)
+    client = _mock_client_with_response(VALID_MULTI)
+    results = fetch_multiple_expirations("SPY", [exp], client=client)
+    assert exp in results
+    assert results[exp] == VALID_MULTI
