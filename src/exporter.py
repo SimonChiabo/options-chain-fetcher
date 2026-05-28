@@ -185,3 +185,61 @@ def export_to_excel(
 
     print(f"[OK] Excel generado: {filepath}")
     return filepath
+
+
+def export_multiple_to_excel(
+    parsed: dict,
+    skew_df: pd.DataFrame,
+    symbol: str,
+) -> pathlib.Path:
+    """
+    Genera el archivo Excel para multiples vencimientos.
+
+    Args:
+        parsed:  {expiration: (calls_df, puts_df)} de parse_option_chain().
+        skew_df: DataFrame de IV Skew de calculate_iv_skew().
+        symbol:  Ticker del subyacente.
+
+    Returns:
+        Path absoluto del archivo .xlsx generado en OUTPUT_DIR.
+    """
+    output_dir = pathlib.Path(config.OUTPUT_DIR)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    sorted_exps = sorted(parsed.keys())
+    dates_str   = "_".join(exp.strftime("%Y%m%d") for exp in sorted_exps)
+    filename    = f"{symbol.upper()}_{dates_str}_options.xlsx"
+    filepath    = output_dir / filename
+
+    with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
+        for exp in sorted_exps:
+            calls_df, puts_df = parsed[exp]
+            tag = exp.strftime("%Y%m%d")
+            _write_sheet(writer, calls_df, f"CALLS_{tag}", CALL_HEADER_COLOR)
+            _write_sheet(writer, puts_df,  f"PUTS_{tag}",  PUT_HEADER_COLOR)
+
+        if not skew_df.empty:
+            _write_sheet(writer, skew_df, "IV_SKEW", INFO_HEADER_COLOR)
+
+        total_calls = sum(len(parsed[e][0]) for e in sorted_exps)
+        total_puts  = sum(len(parsed[e][1]) for e in sorted_exps)
+        exps_str    = ", ".join(exp.strftime("%Y-%m-%d") for exp in sorted_exps)
+
+        info_data = {
+            "Campo": [
+                "Subyacente", "Vencimientos", "Descargado el",
+                "Total Calls", "Total Puts", "Fuente",
+            ],
+            "Valor": [
+                symbol.upper(),
+                exps_str,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                total_calls,
+                total_puts,
+                "Schwab Market Data API",
+            ],
+        }
+        _write_sheet(writer, pd.DataFrame(info_data), "INFO", INFO_HEADER_COLOR)
+
+    print(f"[OK] Excel generado: {filepath}")
+    return filepath

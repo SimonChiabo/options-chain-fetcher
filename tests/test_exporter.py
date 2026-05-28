@@ -136,3 +136,47 @@ def test_analysis_sheet_contains_pc_ratio(tmp_path, monkeypatch):
     ws = wb["ANALYSIS"]
     all_values = [ws.cell(row=r, column=2).value for r in range(2, ws.max_row + 1)]
     assert "1.2500" in all_values
+
+
+def test_export_multiple_creates_file(tmp_path, monkeypatch):
+    from src.exporter import export_multiple_to_excel
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    exp1 = date(2025, 6, 20)
+    exp2 = date(2025, 7, 18)
+    parsed = {
+        exp1: (_minimal_calls(), _minimal_puts()),
+        exp2: (_minimal_calls(), _minimal_puts()),
+    }
+    skew_df = pd.DataFrame({"strike": [500.0], "2025-06-20": [0.20], "2025-07-18": [0.25]})
+    filepath = export_multiple_to_excel(parsed, skew_df, "SPY")
+    assert filepath.exists()
+    assert filepath.suffix == ".xlsx"
+
+
+def test_export_multiple_sheet_names(tmp_path, monkeypatch):
+    from src.exporter import export_multiple_to_excel
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    exp1 = date(2025, 6, 20)
+    parsed = {exp1: (_minimal_calls(), _minimal_puts())}
+    skew_df = pd.DataFrame({"strike": [500.0], "2025-06-20": [0.20]})
+    filepath = export_multiple_to_excel(parsed, skew_df, "SPY")
+    wb = openpyxl.load_workbook(filepath)
+    assert "CALLS_20250620" in wb.sheetnames
+    assert "PUTS_20250620" in wb.sheetnames
+    assert "IV_SKEW" in wb.sheetnames
+    assert "INFO" in wb.sheetnames
+
+
+def test_export_multiple_filename_contains_all_dates(tmp_path, monkeypatch):
+    from src.exporter import export_multiple_to_excel
+    monkeypatch.setattr("config.OUTPUT_DIR", str(tmp_path))
+    exp1 = date(2025, 6, 20)
+    exp2 = date(2025, 7, 18)
+    parsed = {
+        exp1: (_minimal_calls(), _minimal_puts()),
+        exp2: (_minimal_calls(), _minimal_puts()),
+    }
+    skew_df = pd.DataFrame({"strike": [500.0]})
+    filepath = export_multiple_to_excel(parsed, skew_df, "SPY")
+    assert "20250620" in filepath.name
+    assert "20250718" in filepath.name
