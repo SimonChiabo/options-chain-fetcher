@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=78.1.1"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "options-chain-fetcher"
+version = "1.0.0"
+description = "Download options chains from Schwab API and export to Excel"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "schwab-py>=1.5.1,<2.0.0",
+    "pandas>=2.0.0,<3.0.0",
+    "openpyxl>=3.1.5,<4.0.0",
+    "python-dotenv>=1.2.0,<2.0.0",
+    "requests>=2.33.0,<3.0.0",
+    "cryptography>=46.0.6",
+    "rich>=13.0.0,<15.0.0",
+]
+
+[project.scripts]
+options-chain = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "config"]
+packages   = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src", "main", "config"]
