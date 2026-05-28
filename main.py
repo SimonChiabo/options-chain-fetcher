@@ -19,9 +19,12 @@ import config
 from config       import ConfigError
 from src.auth     import get_client
 from src.fetcher  import fetch_option_chain
+from src.fetcher  import fetch_multiple_expirations
 from src.parser   import parse_option_chain
 from src.exporter import export_to_excel
+from src.exporter import export_multiple_to_excel
 from src.analyzer import calculate_max_pain, calculate_pc_ratio
+from src.analyzer import calculate_iv_skew
 
 console = Console()
 
@@ -48,9 +51,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--expiration", "-e",
-        required=True,
+        required=False,
+        default=None,
         type=lambda s: datetime.strptime(s, "%Y-%m-%d").date(),
         help="Fecha de vencimiento en formato YYYY-MM-DD",
+    )
+    parser.add_argument(
+        "--expirations", "-E",
+        required=False,
+        default=None,
+        type=lambda s: [datetime.strptime(d.strip(), "%Y-%m-%d").date() for d in s.split(",")],
+        help="Multiples vencimientos separados por coma: 2025-06-20,2025-07-18",
     )
     parser.add_argument(
         "--strikes", "-k",
@@ -86,31 +97,65 @@ def main() -> None:
 
         client = get_client()
 
-        raw = fetch_option_chain(
-            symbol=args.symbol,
-            expiration=args.expiration,
-            contract_type=args.type,
-            strike_count=args.strikes,
-            client=client,
-        )
+        if args.expirations:
+            # -- Flujo multi-vencimiento ---------------------------------
+            expirations = args.expirations
+            console.print(f"    [dim]Vencimientos: {', '.join(str(e) for e in expirations)}[/dim]")
 
-        calls_df, puts_df = parse_option_chain(raw, args.expiration)
+            raw_dict = fetch_multiple_expirations(
+                symbol=args.symbol,
+                expirations=expirations,
+                contract_type=args.type,
+                strike_count=args.strikes,
+                client=client,
+            )
+            parsed = {exp: parse_option_chain(raw, exp) for exp, raw in raw_dict.items()}
+            skew_df = calculate_iv_skew(parsed)
 
-        max_pain = calculate_max_pain(calls_df, puts_df)
-        pc_ratio = calculate_pc_ratio(calls_df, puts_df)
-        analysis = {"max_pain": max_pain, "pc_ratio": pc_ratio}
+            total_calls = sum(len(calls) for calls, _ in parsed.values())
+            total_puts  = sum(len(puts)  for _, puts  in parsed.values())
 
-        table = Table(show_header=True, header_style="bold magenta", box=None)
-        table.add_column("Metrica", style="cyan", min_width=22)
-        table.add_column("Valor",   style="bold green")
-        table.add_row("Calls encontradas",   str(len(calls_df)))
-        table.add_row("Puts encontradas",    str(len(puts_df)))
-        table.add_row("Max Pain Strike",     f"${max_pain['strike']:.2f}")
-        table.add_row("P/C Ratio (Volumen)", f"{pc_ratio['volume_ratio']:.2f}")
-        table.add_row("P/C Ratio (OI)",      f"{pc_ratio['oi_ratio']:.2f}")
-        console.print(table)
+            table = Table(show_header=True, header_style="bold magenta", box=None)
+            table.add_column("Metrica", style="cyan", min_width=22)
+            table.add_column("Valor",   style="bold green")
+            table.add_row("Total Calls",        str(total_calls))
+            table.add_row("Total Puts",         str(total_puts))
+            table.add_row("Vencimientos",       str(len(expirations)))
+            table.add_row("Strikes en IV Skew", str(len(skew_df)))
+            console.print(table)
 
-        filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration, analysis=analysis)
+            filepath = export_multiple_to_excel(parsed, skew_df, args.symbol)
+
+        else:
+            # -- Flujo single vencimiento (comportamiento original) -------
+            if args.expiration is None:
+                console.print("[bold red][ERROR][/bold red] Se requiere --expiration o --expirations")
+                raise SystemExit(1)
+
+            raw = fetch_option_chain(
+                symbol=args.symbol,
+                expiration=args.expiration,
+                contract_type=args.type,
+                strike_count=args.strikes,
+                client=client,
+            )
+            calls_df, puts_df = parse_option_chain(raw, args.expiration)
+
+            max_pain = calculate_max_pain(calls_df, puts_df)
+            pc_ratio = calculate_pc_ratio(calls_df, puts_df)
+            analysis = {"max_pain": max_pain, "pc_ratio": pc_ratio}
+
+            table = Table(show_header=True, header_style="bold magenta", box=None)
+            table.add_column("Metrica", style="cyan", min_width=22)
+            table.add_column("Valor",   style="bold green")
+            table.add_row("Calls encontradas",   str(len(calls_df)))
+            table.add_row("Puts encontradas",    str(len(puts_df)))
+            table.add_row("Max Pain Strike",     f"${max_pain['strike']:.2f}")
+            table.add_row("P/C Ratio (Volumen)", f"{pc_ratio['volume_ratio']:.2f}")
+            table.add_row("P/C Ratio (OI)",      f"{pc_ratio['oi_ratio']:.2f}")
+            console.print(table)
+
+            filepath = export_to_excel(calls_df, puts_df, args.symbol, args.expiration, analysis=analysis)
 
         console.print(f"\n[bold green][OK][/bold green] Abri el archivo: [underline]{filepath}[/underline]\n")
 
