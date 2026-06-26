@@ -1,0 +1,32 @@
+# Reglas de ejemplo. Copiar a rules.yaml y ajustar.
+# scope: contract (por contrato) o chain (agregado de la cadena).
+# IV se expresa en fraccion decimal: 0.30 = 30%.
+rules:
+  - name: high_iv_calls
+    scope: contract
+    type: CALL
+    field: iv
+    operator: gt
+    value: 0.30
+    message: "IV de call por encima de 30%"
+
+  - name: wide_spread
+    scope: contract
+    field: spread_pct
+    operator: gt
+    value: 0.10
+    message: "Spread mayor al 10% del mid"
+
+  - name: put_call_extreme
+    scope: chain
+    field: pc_volume_ratio
+    operator: gt
+    value: 1.5
+    message: "Put/Call de volumen extremo"
+
+  - name: near_max_pain
+    scope: chain
+    field: distance_to_max_pain_pct
+    operator: lt
+    value: 0.005
+    message: "Precio a menos de 0.5% del Max Pain"
