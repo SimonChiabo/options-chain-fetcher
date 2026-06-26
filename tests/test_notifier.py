@@ -1,5 +1,6 @@
 """Tests para src/notifier.py. requests y toast mockeados, sin red."""
 
+import logging
 from datetime import datetime
 
 import pytest
@@ -83,3 +84,21 @@ def test_composite_continues_after_failing_notifier():
     composite = CompositeNotifier([_Boom(), _Record()])
     composite.send(_alert())
     assert len(sent) == 1
+
+
+def test_telegram_failure_never_logs_token(caplog):
+    """El mensaje de excepcion de requests contiene la URL con el token; el log
+    nunca debe incluirlo (regla de seguridad del proyecto)."""
+    token = "123456:SUPERSECRETTOKEN"
+
+    class _LeakySession:
+        def post(self, url, data=None, timeout=None):
+            # requests embute la URL completa (con el token) en el mensaje.
+            raise RuntimeError(f"Max retries exceeded with url: /bot{token}/sendMessage")
+
+    notifier = TelegramNotifier(token=token, chat_id="123", session=_LeakySession())
+    with caplog.at_level(logging.DEBUG):
+        notifier.send(_alert())  # no debe propagar
+
+    assert "SUPERSECRETTOKEN" not in caplog.text
+    assert token not in caplog.text

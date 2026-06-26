@@ -44,7 +44,8 @@ class TelegramNotifier:
                 timeout=10,
             )
         except Exception as exc:  # noqa: BLE001 - canal aislado
-            log.debug("Telegram send fallo: %s", exc)
+            # Solo el tipo de excepcion: su mensaje puede contener la URL con el token.
+            log.debug("Telegram send fallo: %s", type(exc).__name__)
 
 
 def _show_windows_toast(title: str, body: str) -> None:

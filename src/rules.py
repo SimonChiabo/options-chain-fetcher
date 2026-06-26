@@ -92,6 +92,8 @@ def _validate(rule: Rule) -> None:
     if rule.operator in _RANGE_OPERATORS:
         if not isinstance(rule.value, (list, tuple)) or len(rule.value) != 2:
             raise ConfigError(f"Regla '{rule.name}': '{rule.operator}' requiere value [min, max]")
+    if rule.scope == "contract" and rule.type not in (None, "ALL", "CALL", "PUT"):
+        raise ConfigError(f"Regla '{rule.name}': type invalido '{rule.type}'")
 
 
 def load_rules(path: str) -> list[Rule]:

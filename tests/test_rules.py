@@ -144,3 +144,17 @@ class TestLoadRules:
         )
         with pytest.raises(ConfigError):
             load_rules(str(p))
+
+    def test_invalid_type_raises(self, tmp_path):
+        p = tmp_path / "rules.yaml"
+        p.write_text(
+            "rules:\n"
+            "  - name: r\n"
+            "    scope: contract\n"
+            "    type: PUTS\n"
+            "    field: iv\n"
+            "    operator: gt\n"
+            "    value: 0.3\n"
+        )
+        with pytest.raises(ConfigError):
+            load_rules(str(p))

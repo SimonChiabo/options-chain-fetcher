@@ -148,3 +148,12 @@ class TestChainMetrics:
         puts = _make_df([100], [100])
         m = build_chain_metrics(calls, puts, underlying_price=0.0)
         assert m["distance_to_max_pain_pct"] == float("inf")
+
+    def test_zero_call_volume_pc_ratio_is_nan_not_inf(self):
+        import math
+        # Volumen de calls cero -> calculate_pc_ratio devuelve inf; build_chain_metrics
+        # lo convierte a NaN para que el motor de reglas no dispare una alerta espuria.
+        calls = _make_df([100], [100], [0])
+        puts = _make_df([100], [100], [50])
+        m = build_chain_metrics(calls, puts, underlying_price=100.0)
+        assert math.isnan(m["pc_volume_ratio"])

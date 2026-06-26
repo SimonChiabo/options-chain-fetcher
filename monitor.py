@@ -13,7 +13,7 @@ import sys
 import time
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from typing import Optional
+from typing import Any, Optional
 
 from rich.console import Console
 
@@ -26,7 +26,7 @@ from src.normalizer import normalize_chain
 from src.analyzer import build_chain_metrics
 from src.rules import load_rules, evaluate_rules, Rule, Alert
 from src.alert_state import AlertState
-from src.notifier import build_notifier_from_config
+from src.notifier import build_notifier_from_config, Notifier
 
 log = logging.getLogger(__name__)
 console = Console()
@@ -44,12 +44,12 @@ def is_market_hours(now: Optional[datetime] = None) -> bool:
 
 
 def run_cycle(
-    client,
+    client: Any,
     symbol: str,
     expiration: date,
     rules: list[Rule],
     state: AlertState,
-    notifier,
+    notifier: Notifier,
     contract_type: str,
     strike_count: Optional[int],
     iv_scale: str,
@@ -62,17 +62,16 @@ def run_cycle(
             symbol=symbol, expiration=expiration, contract_type=contract_type,
             strike_count=strike_count, client=client,
         )
-    except (RuntimeError, ValueError) as exc:
+        calls_df, puts_df = parse_option_chain(raw, expiration)
+        underlying = extract_underlying_price(raw)
+        calls_n, puts_n = normalize_chain(calls_df, puts_df, underlying, iv_scale)
+        metrics = build_chain_metrics(calls_n, puts_n, underlying)
+        alerts = evaluate_rules(rules, calls_n, puts_n, metrics, symbol, now=now)
+        to_notify = state.update(alerts, now=now)
+    except Exception as exc:  # noqa: BLE001 - el loop debe sobrevivir cualquier fallo de ciclo
         log.debug("Ciclo fallo para %s: %s", symbol, exc)
         console.print(f"[yellow][WARN][/yellow] Fallo el ciclo para {symbol}; se reintenta.")
         return []
-
-    calls_df, puts_df = parse_option_chain(raw, expiration)
-    underlying = extract_underlying_price(raw)
-    calls_n, puts_n = normalize_chain(calls_df, puts_df, underlying, iv_scale)
-    metrics = build_chain_metrics(calls_n, puts_n, underlying)
-    alerts = evaluate_rules(rules, calls_n, puts_n, metrics, symbol, now=now)
-    to_notify = state.update(alerts, now=now)
 
     for alert in to_notify:
         notifier.send(alert)
@@ -102,9 +101,9 @@ def main() -> None:
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
     try:
+        args = parse_args()
         config.validate_config()
         config.validate_alert_config()
-        args = parse_args()
 
         rules = load_rules(args.rules)
         notifier = build_notifier_from_config()

@@ -1,8 +1,11 @@
 """
 src/alert_state.py
 Gate de cooldown edge-triggered. Evita el spam de notificar la misma condicion
-en cada ciclo de polling. Una condicion dispara al activarse; se re-arma cuando
-se despeja por al menos min_interval segundos.
+en cada ciclo de polling. Una condicion dispara al activarse; mientras siga
+activa se re-notifica como mucho una vez cada min_interval segundos (medido
+desde el ultimo disparo). Una clave despejada se olvida cuando pasa min_interval
+desde su ultimo disparo, de modo que una reactivacion posterior cuenta como un
+flanco nuevo.
 """
 
 from datetime import datetime
