@@ -20,6 +20,7 @@ REFRESH_INTERVAL     = int(os.getenv("REFRESH_INTERVAL", "60"))
 
 # -- Normalizacion / alertas ----------------------------------
 IV_INPUT_SCALE       = os.getenv("IV_INPUT_SCALE", "percent")  # "percent" | "decimal"
+ALERT_MIN_INTERVAL   = int(os.getenv("ALERT_MIN_INTERVAL", "300"))  # segundos
 
 # -- Columnas que se exportan al Excel ------------------------
 CALLS_COLUMNS = [
