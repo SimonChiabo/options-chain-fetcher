@@ -7,4 +7,5 @@ cryptography>=46.0.6
 setuptools>=78.1.1
 rich>=13.0.0,<15.0.0
 PyYAML>=6.0,<7.0
+tzdata>=2024.1 ; sys_platform == "win32"
 windows-toasts>=1.1.0 ; sys_platform == "win32"

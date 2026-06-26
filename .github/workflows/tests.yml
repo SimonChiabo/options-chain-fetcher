@@ -26,7 +26,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m pytest \
-            --cov=src --cov=main --cov=config \
+            --cov=src --cov=main --cov=config --cov=monitor \
             --cov-report=term-missing \
             --cov-fail-under=85 \
             -q
