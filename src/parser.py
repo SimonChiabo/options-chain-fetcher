@@ -10,6 +10,14 @@ import pandas as pd
 import config
 
 
+def extract_underlying_price(raw: dict) -> float:
+    """Precio del subyacente desde la respuesta cruda. 0.0 si falta."""
+    try:
+        return float(raw.get("underlyingPrice", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _extract_legs(exp_date_map: dict, expiration: date) -> list[dict]:
     target = expiration.strftime("%Y-%m-%d")
     rows = []

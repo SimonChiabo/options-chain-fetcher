@@ -137,3 +137,15 @@ def test_breakeven_empty_dataframe():
     # No debe lanzar excepcion con DataFrames vacios
     assert calls.empty
     assert puts.empty
+
+
+from src.parser import extract_underlying_price
+
+
+def test_extract_underlying_price_present():
+    raw = {"underlyingPrice": 581.25, "callExpDateMap": {}}
+    assert extract_underlying_price(raw) == 581.25
+
+
+def test_extract_underlying_price_missing_defaults_zero():
+    assert extract_underlying_price({}) == 0.0

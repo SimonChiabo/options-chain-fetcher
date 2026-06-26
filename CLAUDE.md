@@ -9,14 +9,27 @@ Proyecto auditado (5 rondas, 36 tests, 85% coverage).
 - `pip install -r requirements.txt`
 - `python main.py --symbol SPY --expiration 2025-06-20`
 
+## Monitor de Alertas
+- `python monitor.py --symbol SPY --expiration 2026-07-17 --rules rules.yaml`
+- Copiar `rules.example.yaml` a `rules.yaml` y ajustar umbrales
+- IV en reglas se expresa en decimal (0.30 = 30%)
+- Canales: toast de Windows + Telegram (configurar en .env)
+
 ## Key Files
 - `main.py` — entry point CLI, validacion de simbolo, encoding fix Windows
+- `monitor.py` — loop continuo de alertas (rules YAML, Telegram + toast)
 - `config.py` — config central, lee .env, ConfigError custom
 - `src/auth.py` — OAuth2 Schwab con token recovery
 - `src/fetcher.py` — API calls con validacion de inputs
 - `src/parser.py` — JSON -> DataFrames con spread column
+- `src/normalizer.py` — limpieza y metricas por-contrato
+- `src/analyzer.py` — max pain, P/C ratio, IV skew, chain metrics
+- `src/rules.py` — motor de reglas declarativo (YAML)
+- `src/alert_state.py` — cooldown edge-triggered
+- `src/notifier.py` — notificadores Telegram / desktop
 - `src/exporter.py` — Excel con sheets CALLS/PUTS/INFO, ITM highlighting
-- `tests/` — 36 tests (parser, exporter, fetcher, auth, config, security)
+- `tests/` — suite pytest (parser, exporter, fetcher, auth, config, security,
+  normalizer, analyzer, rules, alert_state, notifier, monitor)
 
 ## CLI Parameters
 - `--symbol / -s` (required): Ticker, validado con regex [A-Za-z0-9.]{1,10}

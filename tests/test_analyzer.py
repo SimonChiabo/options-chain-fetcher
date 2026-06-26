@@ -118,3 +118,42 @@ class TestIVSkew:
     def test_iv_skew_empty_data(self):
         skew = calculate_iv_skew({})
         assert skew.empty
+
+
+from src.analyzer import build_chain_metrics
+
+
+class TestChainMetrics:
+    def test_keys_present(self):
+        calls = _make_df([100, 105], [1000, 2000], [100, 200])
+        puts = _make_df([100, 105], [500, 1500], [150, 150])
+        m = build_chain_metrics(calls, puts, underlying_price=103.0)
+        for key in (
+            "pc_volume_ratio", "pc_oi_ratio", "max_pain_strike",
+            "underlying_price", "distance_to_max_pain", "distance_to_max_pain_pct",
+        ):
+            assert key in m
+
+    def test_distance_to_max_pain(self):
+        calls = _make_df([100, 105, 110], [100, 50, 200])
+        puts = _make_df([100, 105, 110], [300, 100, 50])
+        m = build_chain_metrics(calls, puts, underlying_price=108.0)
+        # max pain strike is 105.0 -> distance = 3.0
+        assert m["max_pain_strike"] == 105.0
+        assert abs(m["distance_to_max_pain"] - 3.0) < 1e-9
+        assert abs(m["distance_to_max_pain_pct"] - 3.0 / 108.0) < 1e-9
+
+    def test_zero_underlying_distance_pct_is_inf(self):
+        calls = _make_df([100], [100])
+        puts = _make_df([100], [100])
+        m = build_chain_metrics(calls, puts, underlying_price=0.0)
+        assert m["distance_to_max_pain_pct"] == float("inf")
+
+    def test_zero_call_volume_pc_ratio_is_nan_not_inf(self):
+        import math
+        # Volumen de calls cero -> calculate_pc_ratio devuelve inf; build_chain_metrics
+        # lo convierte a NaN para que el motor de reglas no dispare una alerta espuria.
+        calls = _make_df([100], [100], [0])
+        puts = _make_df([100], [100], [50])
+        m = build_chain_metrics(calls, puts, underlying_price=100.0)
+        assert math.isnan(m["pc_volume_ratio"])

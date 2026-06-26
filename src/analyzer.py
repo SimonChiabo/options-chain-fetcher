@@ -5,6 +5,7 @@ Calculos de dominio financiero sobre option chains.
 
 from datetime import date
 from typing import Any
+import math
 import pandas as pd
 
 
@@ -93,3 +94,41 @@ def calculate_iv_skew(
         table[col] = [iv_map.get(s) for s in sorted_strikes]
 
     return pd.DataFrame(table)
+
+
+def build_chain_metrics(
+    calls_df: pd.DataFrame,
+    puts_df: pd.DataFrame,
+    underlying_price: float,
+) -> dict[str, float]:
+    """
+    Ensambla las metricas chain-level que el motor de reglas puede referenciar.
+
+    Returns:
+        dict con pc_volume_ratio, pc_oi_ratio, max_pain_strike, underlying_price,
+        distance_to_max_pain, distance_to_max_pain_pct.
+    """
+    pc = calculate_pc_ratio(calls_df, puts_df)
+    max_pain = calculate_max_pain(calls_df, puts_df)
+    mp_strike = float(max_pain["strike"])
+
+    distance = abs(underlying_price - mp_strike)
+    if underlying_price and underlying_price > 0:
+        distance_pct = distance / underlying_price
+    else:
+        distance_pct = float("inf")
+
+    # Denominador cero (sin volumen/OI) produce inf en calculate_pc_ratio. Para las
+    # reglas lo tratamos como sin-senal (NaN) y asi el motor lo ignora en vez de
+    # disparar una alerta espuria con valor inf (tipico pre-market / overnight).
+    def _no_signal_if_inf(value: float) -> float:
+        return value if math.isfinite(value) else float("nan")
+
+    return {
+        "pc_volume_ratio": _no_signal_if_inf(pc["volume_ratio"]),
+        "pc_oi_ratio": _no_signal_if_inf(pc["oi_ratio"]),
+        "max_pain_strike": mp_strike,
+        "underlying_price": float(underlying_price),
+        "distance_to_max_pain": round(distance, 4),
+        "distance_to_max_pain_pct": distance_pct,
+    }
