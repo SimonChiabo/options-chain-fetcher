@@ -1,5 +1,29 @@
 # Changelog — Options Chain Fetcher
 
+## Alert Monitor + Portfolio Readiness (2026-06)
+
+### Nuevo: Monitor de alertas (`monitor.py`)
+- Loop continuo de polling sobre la option chain con intervalo configurable.
+- Motor de reglas declarativo en YAML (`src/rules.py`): reglas por contrato
+  (IV, spread, delta, moneyness...) y por cadena (P/C ratio, distancia a Max Pain).
+- Capa de normalizacion (`src/normalizer.py`): canonicaliza nombres de campo,
+  limpia centinelas (-999/inf), marca contratos sin cotizacion y deriva
+  mid / spread_pct / moneyness; estandariza la escala de IV.
+- Cooldown edge-triggered (`src/alert_state.py`): no spamea la misma alerta cada ciclo.
+- Notificadores pluggables (`src/notifier.py`): Telegram + toast de Windows,
+  con aislamiento de fallos por canal. El token nunca se loguea.
+- `build_chain_metrics` en `src/analyzer.py` para metricas a nivel de cadena.
+
+### Nuevo: Modo demo sin credenciales
+- `python main.py --demo` y `python monitor.py --demo` ejecutan el pipeline
+  completo contra `examples/sample_chain.json`, sin Schwab API ni OAuth.
+
+### Portfolio / infraestructura
+- `LICENSE` MIT agregada (el badge del README apuntaba a un archivo inexistente).
+- `tzdata` agregado a requirements en Windows (ZoneInfo del monitor lo requiere).
+- CI mide cobertura de `monitor.py`.
+- Suite ampliada a 157 tests.
+
 ## Audit History (5 rounds)
 
 ### Round 1 — Code Review (8 fixes)
