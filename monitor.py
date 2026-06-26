@@ -81,7 +81,9 @@ def run_cycle(
 
     for alert in to_notify:
         notifier.send(alert)
-        console.print(f"[bold red][ALERTA][/bold red] {alert.message}")
+        console.print(
+            f"[bold red][ALERTA][/bold red] [cyan]{alert.subject}[/cyan] {alert.message}"
+        )
 
     return to_notify
 
