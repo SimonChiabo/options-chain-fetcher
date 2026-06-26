@@ -18,6 +18,9 @@ SCHWAB_REDIRECT_URI  = os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1:8182"
 OUTPUT_DIR           = os.getenv("OUTPUT_DIR", "output")
 REFRESH_INTERVAL     = int(os.getenv("REFRESH_INTERVAL", "60"))
 
+# -- Normalizacion / alertas ----------------------------------
+IV_INPUT_SCALE       = os.getenv("IV_INPUT_SCALE", "percent")  # "percent" | "decimal"
+
 # -- Columnas que se exportan al Excel ------------------------
 CALLS_COLUMNS = [
     "strike",
