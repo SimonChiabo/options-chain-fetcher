@@ -1,0 +1,231 @@
+{
+  "underlyingPrice": 581.0,
+  "callExpDateMap": {
+    "2025-06-20:25": {
+      "555.0": [
+        {
+          "bid": 26.0, "ask": 26.4, "last": 26.2,
+          "volume": 500, "openInterest": 3000,
+          "delta": 0.92, "gamma": 0.003, "theta": -0.08, "vega": 0.12,
+          "impliedVolatility": 40.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "560.0": [
+        {
+          "bid": 21.1, "ask": 21.5, "last": 21.3,
+          "volume": 400, "openInterest": 5000,
+          "delta": 0.87, "gamma": 0.005, "theta": -0.10, "vega": 0.15,
+          "impliedVolatility": 35.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "565.0": [
+        {
+          "bid": 16.3, "ask": 16.7, "last": 16.5,
+          "volume": 300, "openInterest": 7000,
+          "delta": 0.80, "gamma": 0.010, "theta": -0.12, "vega": 0.18,
+          "impliedVolatility": 30.5,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "570.0": [
+        {
+          "bid": 12.0, "ask": 12.4, "last": 12.2,
+          "volume": 400, "openInterest": 9000,
+          "delta": 0.71, "gamma": 0.015, "theta": -0.14, "vega": 0.22,
+          "impliedVolatility": 27.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "575.0": [
+        {
+          "bid": 8.1, "ask": 8.5, "last": 8.3,
+          "volume": 600, "openInterest": 12000,
+          "delta": 0.62, "gamma": 0.018, "theta": -0.16, "vega": 0.26,
+          "impliedVolatility": 24.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "580.0": [
+        {
+          "bid": 4.8, "ask": 5.2, "last": 5.0,
+          "volume": 800, "openInterest": 15000,
+          "delta": 0.52, "gamma": 0.020, "theta": -0.18, "vega": 0.28,
+          "impliedVolatility": 22.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "585.0": [
+        {
+          "bid": 2.4, "ask": 2.8, "last": 2.6,
+          "volume": 500, "openInterest": 10000,
+          "delta": 0.42, "gamma": 0.018, "theta": -0.17, "vega": 0.26,
+          "impliedVolatility": 22.5,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "590.0": [
+        {
+          "bid": 1.1, "ask": 1.5, "last": 1.3,
+          "volume": 400, "openInterest": 7000,
+          "delta": 0.33, "gamma": 0.015, "theta": -0.15, "vega": 0.22,
+          "impliedVolatility": 24.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "595.0": [
+        {
+          "bid": 0.45, "ask": 0.75, "last": 0.60,
+          "volume": 300, "openInterest": 4000,
+          "delta": 0.24, "gamma": 0.011, "theta": -0.12, "vega": 0.18,
+          "impliedVolatility": 27.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "600.0": [
+        {
+          "bid": 0.15, "ask": 0.45, "last": 0.30,
+          "volume": 200, "openInterest": 2500,
+          "delta": 0.16, "gamma": 0.008, "theta": -0.09, "vega": 0.14,
+          "impliedVolatility": 31.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "605.0": [
+        {
+          "bid": 0.05, "ask": 0.25, "last": 0.15,
+          "volume": 100, "openInterest": 1000,
+          "delta": 0.09, "gamma": 0.005, "theta": -0.06, "vega": 0.10,
+          "impliedVolatility": 36.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ]
+    }
+  },
+  "putExpDateMap": {
+    "2025-06-20:25": {
+      "555.0": [
+        {
+          "bid": 0.05, "ask": 0.25, "last": 0.15,
+          "volume": 100, "openInterest": 500,
+          "delta": -0.08, "gamma": 0.003, "theta": -0.06, "vega": 0.10,
+          "impliedVolatility": 38.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "560.0": [
+        {
+          "bid": 0.10, "ask": 0.35, "last": 0.22,
+          "volume": 200, "openInterest": 800,
+          "delta": -0.13, "gamma": 0.005, "theta": -0.09, "vega": 0.13,
+          "impliedVolatility": 34.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "565.0": [
+        {
+          "bid": 0.25, "ask": 0.55, "last": 0.40,
+          "volume": 400, "openInterest": 1200,
+          "delta": -0.20, "gamma": 0.010, "theta": -0.12, "vega": 0.17,
+          "impliedVolatility": 29.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "570.0": [
+        {
+          "bid": 0.60, "ask": 0.90, "last": 0.75,
+          "volume": 600, "openInterest": 1800,
+          "delta": -0.29, "gamma": 0.015, "theta": -0.15, "vega": 0.21,
+          "impliedVolatility": 25.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "575.0": [
+        {
+          "bid": 1.30, "ask": 1.60, "last": 1.45,
+          "volume": 1000, "openInterest": 3500,
+          "delta": -0.38, "gamma": 0.018, "theta": -0.17, "vega": 0.25,
+          "impliedVolatility": 22.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "580.0": [
+        {
+          "bid": 2.80, "ask": 3.20, "last": 3.00,
+          "volume": 2000, "openInterest": 8000,
+          "delta": -0.48, "gamma": 0.020, "theta": -0.18, "vega": 0.27,
+          "impliedVolatility": 21.0,
+          "inTheMoney": false,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "585.0": [
+        {
+          "bid": 5.50, "ask": 5.90, "last": 5.70,
+          "volume": 1500, "openInterest": 10000,
+          "delta": -0.58, "gamma": 0.018, "theta": -0.17, "vega": 0.25,
+          "impliedVolatility": 22.5,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "590.0": [
+        {
+          "bid": 9.40, "ask": 9.80, "last": 9.60,
+          "volume": 1000, "openInterest": 7500,
+          "delta": -0.67, "gamma": 0.015, "theta": -0.15, "vega": 0.21,
+          "impliedVolatility": 26.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "595.0": [
+        {
+          "bid": 13.80, "ask": 14.20, "last": 14.00,
+          "volume": 600, "openInterest": 5000,
+          "delta": -0.76, "gamma": 0.011, "theta": -0.12, "vega": 0.17,
+          "impliedVolatility": 30.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "600.0": [
+        {
+          "bid": 18.50, "ask": 18.90, "last": 18.70,
+          "volume": 400, "openInterest": 3000,
+          "delta": -0.84, "gamma": 0.008, "theta": -0.09, "vega": 0.13,
+          "impliedVolatility": 34.0,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ],
+      "605.0": [
+        {
+          "bid": 23.70, "ask": 24.10, "last": 23.90,
+          "volume": 200, "openInterest": 1500,
+          "delta": -0.91, "gamma": 0.005, "theta": -0.06, "vega": 0.09,
+          "impliedVolatility": 38.5,
+          "inTheMoney": true,
+          "expirationDate": "2025-06-20"
+        }
+      ]
+    }
+  }
+}

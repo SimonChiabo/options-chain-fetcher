@@ -5,13 +5,16 @@ dispara alertas a los canales configurados.
 
 Uso:
     python monitor.py --symbol SPY --expiration 2026-07-17 --rules rules.yaml
+    python monitor.py --demo
 """
 
 import argparse
+import json
 import logging
 import sys
 import time
 from datetime import date, datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 from typing import Any, Optional
 
@@ -27,6 +30,9 @@ from src.analyzer import build_chain_metrics
 from src.rules import load_rules, evaluate_rules, Rule, Alert
 from src.alert_state import AlertState
 from src.notifier import build_notifier_from_config, Notifier
+
+_SAMPLE_PATH = Path(__file__).parent / "examples" / "sample_chain.json"
+_RULES_EXAMPLE_PATH = Path(__file__).parent / "rules.example.yaml"
 
 log = logging.getLogger(__name__)
 console = Console()
@@ -80,11 +86,69 @@ def run_cycle(
     return to_notify
 
 
+def run_demo() -> list[Alert]:
+    """
+    Ejecuta un ciclo del monitor contra el sample chain incluido en el repo.
+    No requiere credenciales, red ni OAuth. Devuelve las alertas disparadas.
+    """
+    console.print(
+        "\n[bold yellow][DEMO][/bold yellow] Modo demo del monitor activo. "
+        "Datos de muestra: SPY 2025-06-20. Un ciclo, sin credenciales reales."
+    )
+
+    with open(_SAMPLE_PATH, encoding="utf-8") as f:
+        raw_data = json.load(f)
+
+    rules = load_rules(str(_RULES_EXAMPLE_PATH))
+    state = AlertState(min_interval=300)
+
+    class _NoopNotifier:
+        def send(self, alert: Alert) -> None:
+            pass
+
+    class _DemoResp:
+        ok: bool = True
+
+        def __init__(self, data: dict) -> None:
+            self._data = data
+
+        def json(self) -> dict:
+            return self._data
+
+    class _DemoClient:
+        def __init__(self, data: dict) -> None:
+            self._data = data
+
+        def get_option_chain(self, **_kw: Any) -> "_DemoResp":
+            return _DemoResp(self._data)
+
+    demo_client = _DemoClient(raw_data)
+
+    alerts = run_cycle(
+        client=demo_client,
+        symbol="SPY",
+        expiration=date(2025, 6, 20),
+        rules=rules,
+        state=state,
+        notifier=_NoopNotifier(),
+        contract_type="ALL",
+        strike_count=None,
+        iv_scale="percent",
+    )
+
+    console.print(
+        f"\n[bold green][DEMO OK][/bold green] {len(alerts)} alerta(s) disparada(s) "
+        "en este ciclo de muestra.\n"
+        "[dim]Nota: datos de muestra, no cotizaciones reales.[/dim]\n"
+    )
+    return alerts
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Monitor continuo de alertas de opciones.")
-    parser.add_argument("--symbol", "-s", required=True, type=str)
+    parser.add_argument("--symbol", "-s", required=False, default=None, type=str)
     parser.add_argument(
-        "--expiration", "-e", required=True,
+        "--expiration", "-e", required=False, default=None,
         type=lambda s: datetime.strptime(s, "%Y-%m-%d").date(),
     )
     parser.add_argument("--rules", default="rules.yaml", type=str)
@@ -92,7 +156,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--type", "-t", choices=["ALL", "CALL", "PUT"], default="ALL")
     parser.add_argument("--strikes", "-k", type=int, default=None)
     parser.add_argument("--market-hours-only", action="store_true")
-    return parser.parse_args()
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        default=False,
+        help="Modo demo: un ciclo contra datos de muestra, sin credenciales.",
+    )
+    args = parser.parse_args()
+    if not args.demo:
+        if args.symbol is None:
+            parser.error("--symbol / -s es requerido (o usa --demo)")
+        if args.expiration is None:
+            parser.error("--expiration / -e es requerido (o usa --demo)")
+    return args
 
 
 def main() -> None:
@@ -100,8 +176,13 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+    args = parse_args()
+
+    if args.demo:
+        run_demo()
+        return
+
     try:
-        args = parse_args()
         config.validate_config()
         config.validate_alert_config()
 
